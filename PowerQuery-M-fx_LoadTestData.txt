@@ -1,5 +1,5 @@
 (FileName as text, FolderName as text) => let
-    Source = Lakehouse.Contents(null){[workspaceId = "cb2af739-998e-45c8-8c41-f78d2e8fc1dd" ]}[Data]{[lakehouseId = "260cc545-9a59-45a7-9897-fb705d4bc4ae"]}[Data],
+    Source = Lakehouse.Contents(null){[workspaceId = "WORKSPACE GUID HERE" ]}[Data]{[lakehouseId = "LAKEHOUSE GUID HERE"]}[Data],
   Navigation = Source{[Id = "Files", ItemKind = "Folder"]}[Data],
   #"Navigation 1" = Navigation{[Name = "PerfScenarios"]}[Content],
   #"Navigation 2" = #"Navigation 1"{[Name = "logs"]}[Content],
@@ -9,4 +9,5 @@
   #"Promoted headers" = Table.PromoteHeaders(#"Imported CSV", [PromoteAllScalars = true]),
   #"Changed column type" = Table.TransformColumnTypes(#"Promoted headers", {{"iterations", Int64.Type}, {"delay_sec", Int64.Type}, {"duration", type number}, {"start_time_dt", type datetime}})
 in 
+
   #"Changed column type"
