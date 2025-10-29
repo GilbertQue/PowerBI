@@ -1,0 +1,22 @@
+let
+    Source = Lakehouse.Contents(null){[workspaceId = "INSERT WORKSPACE GUID HERE" ]}[Data]{[lakehouseId = "INSERT LAKEHOUSE GUID HERE"]}[Data],
+  Navigation = Source{[Id = "Files", ItemKind = "Folder"]}[Data],
+  #"Navigation 1" = Navigation{[Name = "PerfScenarios"]}[Content],
+  #"Navigation 2" = #"Navigation 1"{[Name = "logs"]}[Content],
+  #"Expanded Content" = Table.ExpandTableColumn(#"Navigation 2", "Content", {"Content", "Name", "Extension", "Date accessed", "Date modified", "Date created", "Attributes", "Folder Path"}, {"Content.1", "Name.1", "Extension.1", "Date accessed.1", "Date modified.1", "Date created.1", "Attributes.1", "Folder Path.1"}),
+  #"Filtered rows" = Table.SelectRows(#"Expanded Content", each ([Extension.1] = ".csv")),
+  #"Renamed columns" = Table.RenameColumns(#"Filtered rows", {{"Name", "FolderName"}, {"Name.1", "Name"}}),
+  #"Removed other columns" = Table.SelectColumns(#"Renamed columns", {"Name","FolderName"}),
+  #"Added custom" = Table.AddColumn(#"Removed other columns", "Custom", each fx_LoadTestData([Name],[FolderName])),
+  #"Expanded Custom" = Table.ExpandTableColumn(#"Added custom", "Custom", {"loadtest_id", "model", "concurrent_threads", "iterations", "delay_sec", "query_number", "visual_name", "iteration", "query", "rows", "duration", "start_time", "start_time_dt", "customdata", "effective_username", "thread_id"}, {"loadtest_id", "model", "concurrent_threads", "iterations", "delay_sec", "query_number", "visual_name", "iteration", "query", "rows", "duration", "start_time", "start_time_dt", "customdata", "effective_username", "thread_id"}),
+  #"Changed column type" = Table.TransformColumnTypes(#"Expanded Custom", {{"delay_sec", Int64.Type}, {"iterations", Int64.Type}, {"rows", Int64.Type}, {"duration", type number}, {"start_time_dt", type datetime}}),
+  #"Duplicated column" = Table.DuplicateColumn(#"Changed column type", "start_time_dt", "start_time_dt - Copy"),
+  #"Changed column type 1" = Table.TransformColumnTypes(#"Duplicated column", {{"start_time_dt - Copy", type date}}),
+  #"Renamed columns 1" = Table.RenameColumns(#"Changed column type 1", {{"start_time_dt - Copy", "Start Date"}}),
+  #"Duplicated column 1" = Table.DuplicateColumn(#"Renamed columns 1", "start_time_dt", "start_time_dt - Copy"),
+  #"Changed column type 2" = Table.TransformColumnTypes(#"Duplicated column 1", {{"start_time_dt - Copy", type time}}),
+  #"Calculated start of hour" = Table.TransformColumns(#"Changed column type 2", {{"start_time_dt - Copy", each Time.StartOfHour(_), type nullable time}}),
+  #"Renamed columns 2" = Table.RenameColumns(#"Calculated start of hour", {{"start_time_dt - Copy", "Start Hour"}}),
+  #"Renamed Columns 3" = Table.RenameColumns(#"Renamed columns 2", {{"visual_name", "Visual Name"}})
+in 
+  #"Renamed Columns 3"
